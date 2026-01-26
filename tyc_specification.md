@@ -212,6 +212,18 @@ Float literals are of type **float**.
 \\   backslash (ASCII 92)
 ```
 
+**String Token Processing:**
+- When a valid string literal is recognized, the lexer automatically removes (strips) the enclosing double quotes from both ends. The token value contains only the string content without the quotes.
+- For error cases (`ILLEGAL_ESCAPE` and `UNCLOSE_STRING`), the lexer removes the opening double quote, but the error message includes the problematic content.
+
+**Error Detection Order:**
+The lexer checks for errors in the following order (first match wins):
+1. **Illegal escape sequences** are detected first. An illegal escape is any backslash followed by a character that is not one of the supported escape characters (`b`, `f`, `r`, `n`, `t`, `"`, `\`), and is not followed by a newline or carriage return.
+2. **Unclosed strings** are detected if the string literal is not closed before encountering a newline, carriage return, or end of file.
+3. If neither error occurs, a **valid string literal** is recognized.
+
+For example, `"Hello \a World"` will be detected as an `ILLEGAL_ESCAPE` error because `\a` is an illegal escape sequence (detected before checking if the string is closed).
+
 It is a compile-time error for:
 - A newline (`\n`) or carriage return (`\r`) character to appear directly (unescaped) inside a string literal.
 - An EOF character to appear inside a string literal (i.e., the string literal is not closed before end of file).
@@ -348,6 +360,7 @@ Point p = {10, 20};
 p.x = 30;           // assign to member x
 auto x_coord = p.x; // read member x
 printInt(p.x);      // use member x in expression
+p.x++;              // increment member x (parsed as (p.x)++)
 ```
 
 #### Struct Operations
@@ -513,10 +526,10 @@ The order of precedence for operators is listed from highest to lowest:
 
 | **Operator** | **Associativity** |
 |--------------|-------------------|
+| `.` (member access) | left |
 | `++`, `--` (postfix) | left |
 | `++`, `--` (prefix) | right |
 | `!`, `-` (unary), `+` (unary) | right |
-| `.` (member access) | left |
 | `*`, `/`, `%` | left |
 | `+`, `-` (binary) | left |
 | `<`, `<=`, `>`, `>=` | left |
